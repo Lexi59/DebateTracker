@@ -1,19 +1,18 @@
 //16 columns
 //21 rows
-customW = 560;
-customH = 800;
+customW = 360;
+customH = 700;
 rows = 20;
 columns = 14;
 rectW = customH/rows;
 rectH = customW/columns;
-offset = rectW;
-startingPosition = [0,0];
+startingPosition = [0,40];
 let img, answerRef, submissionRef, rawAnswerData;
 var boxes = new Array();
 var numberInputs = new Array();
 var answers = new Array();
 class box{
-	constructor(x,y,w,h){
+	constructor(x,y){
 		this.x = x;
 		this.y = y;
 		this.checked = false;
@@ -23,7 +22,7 @@ class box{
 		strokeWeight(2);
 		stroke(0);
 		if(this.checked){
-			fill("red");
+			fill(255,0,0,60);
 		}
 		else
 		{
@@ -74,12 +73,12 @@ function setup(){
 	var fileInput = createFileInput(selectImage);
 	fileInput.position(rectW * columns + 105, 50);
 	background(255,255,255);
-	for(var c = 0; c < columns; c++)
+	for(var r = 0; r < rows; r++)
 	{
 		var row = new Array();
-		for(var r = 0; r < rows; r++)
+		for(var c = 0; c < columns; c++)
 		{
-			var b = new box(c*rectW + offset+5,r*rectH,rectW,rectH);
+			var b = new box((c+1)*rectW,r*rectH);
 			row.push(b);
 		}
 		boxes.push(row);
@@ -87,8 +86,6 @@ function setup(){
 	for (var i = 0; i < rows; i++)
 	{
 		inp = createInput();
-		inp.position(0,i*rectH);
-		inp.size(offset,rectH);
 		numberInputs.push(inp);
 	}
 	var tabString = "Answer Tab"
@@ -104,22 +101,32 @@ function setup(){
 		scoreButton = createButton("Score");
 		scoreButton.position(rectW*columns + 105, 75);
 		scoreButton.mousePressed(calculateScore);
+
+		kidNameInput = createInput().attribute('placeholder','Name');
+		kidNameInput.position(rectW*columns + 105, 100);
+
+		scorebox = createInput().attribute('placeholder','Score');
+  		scorebox.position(rectW*columns+105,150);
 	}
 	answerTabbutton = createButton(tabString);
   	answerTabbutton.position(rectW*columns + 105, 25);
   	answerTabbutton.mousePressed(switchTab);
+
+  	divisionInput = createInput().attribute('placeholder', 'Division');
+  	divisionInput.position(rectW * columns + 105, 125);
 }
 function draw()
 {
 	clear();
 	checkKeys();
-	if(img){image(img, offset, 0, rectW*columns, rectH*rows);}
+	if(img){image(img, rectW, 0, 600,1000);}
 	for (var r = 0; r < rows; r++)
 	{
-
+		numberInputs[r].size(rectW,rectH);
+		numberInputs[r].position(0+startingPosition[0],r*rectH+startingPosition[1]);
 		for(var c = 0; c < columns; c++)
 		{
-			boxes[c][r].show();
+			boxes[r][c].show();
 		}
 	}
 }
@@ -131,7 +138,13 @@ function switchTab()
 	}
 	else 
 	{
-		window.location.href = 'answerTab.html';
+		pwd = prompt("Enter the password");
+		if(pwd == "JeffIsAwesome"){
+			window.location.href = 'answerTab.html';
+		}
+		else{
+			alert("Sorry! Wrong password. You may not have access to change the answer sheet");
+		}
 	}
 }
 function selectImage(file)
@@ -151,10 +164,10 @@ function mousePressed(){
 	{
 		for(var c = 0; c < columns; c++)
 		{
-			var b = boxes[c][r];
-			if(mouseX <= b.x + rectW && mouseX >= b.x)
+			var b = boxes[r][c];
+			if(mouseX <= (b.x + startingPosition[0]) + rectW && mouseX >= (b.x+startingPosition[0]))
 			{
-				if(mouseY <= b.y + rectH && mouseY >= b.y)
+				if(mouseY <= (b.y + startingPosition[1]) + rectH && mouseY >= (b.y+startingPosition[1]))
 				{
 					b.checked = !b.checked;
 					return;
@@ -222,79 +235,105 @@ function calculateScore()
 		{
 			score += 8;
 			//Life Span section
-			if(boxes[0][r].checked && answer.perennial)
+			if(boxes[r][0].checked && answer.perennial)
 			{
 				score += 2;
 			}
-			else if (boxes[1][r].checked && answer.biennial)
+			else if (boxes[r][1].checked && answer.biennial)
 			{
 				score += 2;
 			}
-			else if (boxes[2][r].checked && answer.annual)
+			else if (boxes[r][2].checked && answer.annual)
 			{
 				score += 2;
 			}
 			//Growth season section
-			if(boxes[3][r].checked && answer.cool)
+			if(boxes[r][3].checked && answer.cool)
 			{
 				score += 2;
 			}
-			else if (boxes[4][r].checked && answer.warm)
+			else if (boxes[r][4].checked && answer.warm)
 			{
 				score += 2;
 			}
 			//origin
-			if(boxes[5][r].checked && !boxes[7][r].checked &&answer.native && !answer.invader)
+			if(boxes[r][5].checked && !boxes[r][7].checked &&answer.native && !answer.invader)
 			{
 				score += 2;
 			}
-			else if (boxes[5][r].checked && boxes[7][r].checked && answer.native && answer.invader)
+			else if (boxes[r][5].checked && boxes[r][7].checked && answer.native && answer.invader)
 			{
 				score += 2;
 			}
-			else if (boxes[6][r].checked && boxes[7][r].checked && answer.introduced && answer.invader)
+			else if (boxes[r][6].checked && boxes[r][7].checked && answer.introduced && answer.invader)
 			{
 				score += 2;
 			}
 			//prairie Grouse food
-			if (boxes[8][r].checked && answer.grouseFoodDe)
+			if (boxes[r][8].checked && answer.grouseFoodDe)
 			{
 				score += 2;
 			}
-			else if (boxes[9][r].checked && answer.grouseFoodUn)
+			else if (boxes[r][9].checked && answer.grouseFoodUn)
 			{
 				score += 2;
 			}
 			//prairie grouse cover
-			if (boxes[10][r].checked && answer.grouseCoverDe)
+			if (boxes[r][10].checked && answer.grouseCoverDe)
 			{
 				score += 2;
 			}
-			else if (boxes[11][r].checked && answer.grouseCoverUn)
+			else if (boxes[r][11].checked && answer.grouseCoverUn)
 			{
 				score += 2;
 			}
 			//cattle food
-			if (boxes[12][r].checked && answer.cattleFoodDe)
+			if (boxes[r][12].checked && answer.cattleFoodDe)
 			{
 				score += 2;
 			}
-			else if (boxes[13][r].checked && answer.cattleFoodUn)
+			else if (boxes[r][13].checked && answer.cattleFoodUn)
 			{
 				score += 2;
 			}
 		}
 	}
-	console.log(score);
+	scorebox.value(score);
+	submissionRef.once('value').then(submitScore);
+	var dat = {
+		name: kidNameInput.value(),
+		division: divisionInput.value(),
+		judgingScore: score
+	}
+	submissionRef.push(dat);
+}
+function submitScore(data){
+	rawAnswerData = data.val();
+	var keys = Object.keys(data.val());
+	for(var i =0; i < keys.length; i++)
+	{
+		var x = rawAnswerData[keys[i]]
+		if(x.name == kidNameInput.value() && x.division == divisionInput.value())
+		{
+			submissionRef.child(keys[i]).remove();
+			return;
+		}
+	}
 }
 function saveAnswers()
 {
+	pwd = prompt("Are you sure you want to overwrite the current Answer sheet? Type yes");
+	if(pwd != "yes"){
+		alert("Operation cancelled");
+		return;
+	}
+	answerRef.set(null);
 	for(var r = 0; r < rows; r++)
 	{
 		var row = new Array();
 		for(var c = 0; c < columns; c++)
 		{
-			row.push(boxes[c][r].checked);
+			row.push(boxes[r][c].checked);
 		}
 		var data = {
 			flagNum: r+1,
@@ -319,7 +358,11 @@ function saveAnswers()
 }
 function updateAnswers(data)
 {
+	if (data.val() == null){
+		return;
+	}
 	rawAnswerData = data.val();
+	answers = new Array();
 	var keys = Object.keys(data.val());
 	for(var i =0; i < keys.length; i++)
 	{
@@ -328,16 +371,15 @@ function updateAnswers(data)
 	console.log(answers);
 }
 function sizeChange(){
-	boxes.
 	rectW = customH/rows;
 	rectH = customW/columns;
-	for(var c = 0; c < columns; c++)
+	for(var r = 0; r < rows; r++)
 	{
-		for(var r = 0; r < rows; r++)
+		for(var c = 0; c < columns; c++)
 		{
-			var b = boxes[c][r];
-			b.x = c * rectW + offset + 5;
-			b.y = r * rectH;
+			var b = boxes[r][c];
+			b.x = (c+1)*rectW;
+			b.y = r*rectH;
 		}
 	}
 }
