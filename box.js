@@ -1,385 +1,174 @@
-//16 columns
-//21 rows
-customW = 360;
-customH = 700;
-rows = 20;
-columns = 14;
-rectW = customH/rows;
-rectH = customW/columns;
-startingPosition = [0,40];
-let img, answerRef, submissionRef, rawAnswerData;
-var boxes = new Array();
-var numberInputs = new Array();
-var answers = new Array();
-class box{
-	constructor(x,y){
-		this.x = x;
-		this.y = y;
-		this.checked = false;
-	}
-	show()
-	{
-		strokeWeight(2);
-		stroke(0);
-		if(this.checked){
-			fill(255,0,0,60);
-		}
-		else
-		{
-			noFill();
-		}
-		rect(this.x + startingPosition[0],this.y + startingPosition[1],rectW,rectH);
-	}
-}
-class entry{
-	constructor(key){
-		this.flagNum= rawAnswerData[key].flagNum;
-		this.plantNum= rawAnswerData[key].plantNum;
-		this.perennial= rawAnswerData[key].perennial;
-		this.biennial= rawAnswerData[key].biennial;
-		this.annual= rawAnswerData[key].annual;
-		this.cool= rawAnswerData[key].cool;
-		this.warm= rawAnswerData[key].warm;
-		this.native= rawAnswerData[key].native;
-		this.introduced= rawAnswerData[key].introduced;
-		this.invader= rawAnswerData[key].invader;
-		this.grouseFoodDe= rawAnswerData[key].grouseFoodDe;
-		this.grouseFoodUn= rawAnswerData[key].grouseFoodUn;
-		this.grouseCoverDe= rawAnswerData[key].grouseCoverDe;
-		this.grouseCoverUn= rawAnswerData[key].grouseCoverUn;
-		this.cattleFoodDe= rawAnswerData[key].cattleFoodDe;
-		this.cattleFoodUn= rawAnswerData[key].cattleFoodUn;
-	}
-}
+let teamNum = 0;
+let size = 50;
+
 function setup(){
-	//FIREBASE
-	 var firebaseConfig = {
-        apiKey: "AIzaSyAyTvplcy-0Q9S03RLs2gyEdj0-KCLWPB0",
-        authDomain: "rangelanddaysscoring.firebaseapp.com",
-        databaseURL: "https://rangelanddaysscoring.firebaseio.com",
-        projectId: "rangelanddaysscoring",
-        storageBucket: "rangelanddaysscoring.appspot.com",
-        messagingSenderId: "1060084803108",
-        appId: "1:1060084803108:web:93db28d80237eeb0"
-      };
-     firebase.initializeApp(firebaseConfig);
-     var database = firebase.database();
-     answerRef = database.ref('answers');
-     submissionRef = database.ref('submissions');
-     answerRef.once('value').then(updateAnswers);
-     //END FIREBASE
-	createCanvas(windowWidth,windowHeight);
-	colorMode(RGB);
-	var fileInput = createFileInput(selectImage);
-	fileInput.position(rectW * columns + 105, 50);
-	background(255,255,255);
-	for(var r = 0; r < rows; r++)
-	{
-		var row = new Array();
-		for(var c = 0; c < columns; c++)
-		{
-			var b = new box((c+1)*rectW,r*rectH);
-			row.push(b);
-		}
-		boxes.push(row);
-	}
-	for (var i = 0; i < rows; i++)
-	{
-		inp = createInput();
-		numberInputs.push(inp);
-	}
-	var tabString = "Answer Tab"
-	if (findTab() == "Answer")
-	{
-		tabString = "Submission Tab"
-		saveButton = createButton("Save");
-		saveButton.position(rectW*columns+105,75);
-		saveButton.mousePressed(saveAnswers);
-	}
-	else
-	{
-		scoreButton = createButton("Score");
-		scoreButton.position(rectW*columns + 105, 75);
-		scoreButton.mousePressed(calculateScore);
+	createCanvas(600,600);
+	background(255);
+	newTeamName = createInput().attribute('placeholder','Name');
+	newTeamName.position(601,0);
+	addTeamBtn = createButton("Add Team");
+	addTeamBtn.position(776,0);
+	addTeamBtn.mousePressed(addTeam);
+	team1 = createInput().attribute('placeholder','Up');
+	team1.position(601,30);
+	team2 = createInput().attribute('placeholder','Down');
+	team2.position(601,60);
+	side = createInput().attribute('placeholder','Which side were they on?');
+	side.position(776,30);
+	var submit = createButton("Submit");
+	submit.position(601,90);
+	submit.mousePressed(submitRound);
+	showTable();
+}
 
-		kidNameInput = createInput().attribute('placeholder','Name');
-		kidNameInput.position(rectW*columns + 105, 100);
+function showTable(){
+	stroke(0);
+	textAlign(CENTER, CENTER);
+	for(var i = 0; i <= teamNum; i++){
+		for(var j = 0; j <= teamNum; j++){
+			fill(getFill(i,j));
+			rect(i*size, j*size, size, size);
+		}
+	}
+	fill(0);
+	for(var i = 1; i <= teamNum; i++){
+		text(teams[i-1].name,size/2,i*size + size/2);
+		text(teams[i-1].name,i*size + size/2,size/2);
+	}
+	for(var i = 0; i < rounds.length; i++){
+		text(rounds[i].side, rounds[i].loser.id*size/2 + size/2, rounds[i].winner.id * size/2 +size/2);
+	}
+}
+function getFill(i,j){
+	if(i == j){
+		return 0;
+	}
+	else if (i == 0 || j == 0){
+		return 255;
+	}
+	for(var k = 0; k < rounds.length; k++){
+		if(teams[i-1].name == rounds[k].winner.name && teams[j-1].name == rounds[k].loser.name){
+			return 'red';
+		}
+		else if (teams[i-1].name == rounds[k].loser.name && teams[j-1].name == rounds[k].winner.name){
+			return 'green';
+		}
+	}
+	return 255;
+}
+function addTeam(){
+	if(newTeamName.value() == ""){
+		console.log("Sorry! You need a team name!");
+		return;
+	}
+	for(var k = 0; k < teams.length; k++){
+		if(newTeamName.value() == teams[k].name){
+			console.log("That team already exists!");
+			return;
+		}
+	}
+	teamNum = teamNum + 1;
+	teams.push(new Team(newTeamName.value(), teams.length));
+	newTeamName.value("");
+	showTable();
+}
+function submitRound(){
+	var winner, loser;
+	for(var k = 0; k < teams.length; k++){
+		if(teams[k].name == team1.value()){
+			winner = teams[k];
+		}
+		if(teams[k].name == team2.value()){
+			loser = teams[k];
+		}
+	}
+	if(winner == null && loser == null){
+		console.log("Check that your team names are spelled correctly");
+		return;
+	}
+	if(side.value().toLowerCase() != "pro" && side.value().toLowerCase() != "con"){
+		console.log("Sorry! I can't figure out which side team " + team1.value() + " is supposed to be on");
+		return;
+	}
+	rounds.push(new Round(winner, loser, side.value()));
+	team1.value("");
+	team2.value("");
+	side.value("");
+	showTable();
+}
 
-		scorebox = createInput().attribute('placeholder','Score');
-  		scorebox.position(rectW*columns+105,150);
-	}
-	answerTabbutton = createButton(tabString);
-  	answerTabbutton.position(rectW*columns + 105, 25);
-  	answerTabbutton.mousePressed(switchTab);
-
-  	divisionInput = createInput().attribute('placeholder', 'Division');
-  	divisionInput.position(rectW * columns + 105, 125);
-}
-function draw()
-{
-	clear();
-	checkKeys();
-	if(img){image(img, rectW, 0, 600,1000);}
-	for (var r = 0; r < rows; r++)
-	{
-		numberInputs[r].size(rectW,rectH);
-		numberInputs[r].position(0+startingPosition[0],r*rectH+startingPosition[1]);
-		for(var c = 0; c < columns; c++)
-		{
-			boxes[r][c].show();
-		}
-	}
-}
-function switchTab()
-{
-	if( findTab() == "Answer")
-	{
-		window.location.href = 'index.html';
-	}
-	else 
-	{
-		pwd = prompt("Enter the password");
-		if(pwd == "JeffIsAwesome"){
-			window.location.href = 'answerTab.html';
-		}
-		else{
-			alert("Sorry! Wrong password. You may not have access to change the answer sheet");
-		}
-	}
-}
-function selectImage(file)
-{
-	if (file.type === 'image')
-	{
-    	img = createImg(file.data);
-    	img.hide();
-  	} 
-  	else
-  	{
-  		img= null;
-  	}
-}
 function mousePressed(){
-	for (var r = 0; r < rows; r++)
+	for (var c = 0; c <= teamNum; c++)
 	{
-		for(var c = 0; c < columns; c++)
+		for(var r = 0; r <= teamNum; r++)
 		{
-			var b = boxes[r][c];
-			if(mouseX <= (b.x + startingPosition[0]) + rectW && mouseX >= (b.x+startingPosition[0]))
+			if(mouseX <= c*size + size && mouseX >= c*size)
 			{
-				if(mouseY <= (b.y + startingPosition[1]) + rectH && mouseY >= (b.y+startingPosition[1]))
+				if(mouseY <= r*size + size && mouseY >= r*size)
 				{
-					b.checked = !b.checked;
+					if(r == 0 && c!= 0){
+						console.log("Opening team stats for team "+ teams[c-1].name);
+					}
+					else if (c == 0 && r != 0){
+						console.log("Opening team stats for team " + teams[r-1].name);
+					}
 					return;
 				}
 			}
 		}
 	}
 }
-function checkKeys()
-{
-	if(keyIsDown(87))
-	{
-		startingPosition[1] -= 1;
-		if(startingPosition[1] < 0)
-			startingPosition[1] = 0
-	}
-	if(keyIsDown(83))
-	{
-		startingPosition[1]+=1;
-		if(startingPosition[1] > windowHeight)
-			startingPosition[1] = windowHeight;
-	}
-	if(keyIsDown(65))
-	{
-		startingPosition[0] -= 1;
-		if(startingPosition[0] < 0)
-			startingPosition[0] = 0;
-	}
-	if(keyIsDown(68))
-	{
-		startingPosition[0]+=1;
-		if(startingPosition[0] > windowWidth)
-			startingPosition[0] = windowWidth;
-	}
-	if(keyIsDown(88)){
-		customW += 2;
-		customH += 2;
-		sizeChange();
-	}
-	if(keyIsDown(90)){
-		customH -=2;
-		customW -=2;
-		sizeChange();
-	}
-}
-function findTab()
-{
-	if( window.location.href.indexOf('answerTab.html') >= 0)
-	{
-		return "Answer"
-	}
-	else
-	{
-		return "Submission"
-	}
-}
-function calculateScore()
-{
-	var score = 0;
-	for(var r = 0; r < rows; r++)
-	{
-		var answer = answers[r];
-		//if plant number is wrong, skip the row
-		if (numberInputs[r].value()==answer.plantNum)
-		{
-			score += 8;
-			//Life Span section
-			if(boxes[r][0].checked && answer.perennial)
-			{
-				score += 2;
+function populateTeamStats(i){
+	var totalWins = 0;
+	var proWins = 0;
+	var conWins = 0;
+	var totalLosses = 0;
+	var proLosses = 0;
+	var conLosses = 0;
+	fill(0);
+	text("Team Name: " + teams[i].name, 601,110);
+	for(var k = 0; k < rounds.length; k++){
+		if(rounds[k].winner.name == teams[i].name){
+			totalWins++;
+			if(rounds[k].side == "pro"){
+				proWins++;
 			}
-			else if (boxes[r][1].checked && answer.biennial)
-			{
-				score += 2;
+			if(rounds[k].side == "con"){
+				conWins++;
 			}
-			else if (boxes[r][2].checked && answer.annual)
-			{
-				score += 2;
+		}
+		if(rounds[k].loser.name == teams[i].name){
+			totalLosses++;
+			if(rounds[k].side == "pro"){
+				proLosses++;
 			}
-			//Growth season section
-			if(boxes[r][3].checked && answer.cool)
-			{
-				score += 2;
-			}
-			else if (boxes[r][4].checked && answer.warm)
-			{
-				score += 2;
-			}
-			//origin
-			if(boxes[r][5].checked && !boxes[r][7].checked &&answer.native && !answer.invader)
-			{
-				score += 2;
-			}
-			else if (boxes[r][5].checked && boxes[r][7].checked && answer.native && answer.invader)
-			{
-				score += 2;
-			}
-			else if (boxes[r][6].checked && boxes[r][7].checked && answer.introduced && answer.invader)
-			{
-				score += 2;
-			}
-			//prairie Grouse food
-			if (boxes[r][8].checked && answer.grouseFoodDe)
-			{
-				score += 2;
-			}
-			else if (boxes[r][9].checked && answer.grouseFoodUn)
-			{
-				score += 2;
-			}
-			//prairie grouse cover
-			if (boxes[r][10].checked && answer.grouseCoverDe)
-			{
-				score += 2;
-			}
-			else if (boxes[r][11].checked && answer.grouseCoverUn)
-			{
-				score += 2;
-			}
-			//cattle food
-			if (boxes[r][12].checked && answer.cattleFoodDe)
-			{
-				score += 2;
-			}
-			else if (boxes[r][13].checked && answer.cattleFoodUn)
-			{
-				score += 2;
+			if(rounds[k].side == "con"){
+				conLosses++;
 			}
 		}
 	}
-	scorebox.value(score);
-	submissionRef.once('value').then(submitScore);
-	var dat = {
-		name: kidNameInput.value(),
-		division: divisionInput.value(),
-		judgingScore: score
-	}
-	submissionRef.push(dat);
-}
-function submitScore(data){
-	rawAnswerData = data.val();
-	var keys = Object.keys(data.val());
-	for(var i =0; i < keys.length; i++)
-	{
-		var x = rawAnswerData[keys[i]]
-		if(x.name == kidNameInput.value() && x.division == divisionInput.value())
-		{
-			submissionRef.child(keys[i]).remove();
-			return;
-		}
-	}
-}
-function saveAnswers()
-{
-	pwd = prompt("Are you sure you want to overwrite the current Answer sheet? Type yes");
-	if(pwd != "yes"){
-		alert("Operation cancelled");
-		return;
-	}
-	answerRef.set(null);
-	for(var r = 0; r < rows; r++)
-	{
-		var row = new Array();
-		for(var c = 0; c < columns; c++)
-		{
-			row.push(boxes[r][c].checked);
-		}
-		var data = {
-			flagNum: r+1,
-			plantNum: numberInputs[r].value(),
-			perennial: row[0],
-			biennial: row[1],
-			annual: row[2],
-			cool: row[3],
-			warm: row[4],
-			native: row[5],
-			introduced: row[6],
-			invader: row[7],
-			grouseFoodDe: row[8],
-			grouseFoodUn: row[9],
-			grouseCoverDe: row[10],
-			grouseCoverUn: row[11],
-			cattleFoodDe: row[12],
-			cattleFoodUn: row[13]
-		}
-		answerRef.push(data)
-	}
-}
-function updateAnswers(data)
-{
-	if (data.val() == null){
-		return;
-	}
-	rawAnswerData = data.val();
-	answers = new Array();
-	var keys = Object.keys(data.val());
-	for(var i =0; i < keys.length; i++)
-	{
-		answers.push(new entry(keys[i]));
-	}
-	console.log(answers);
-}
-function sizeChange(){
-	rectW = customH/rows;
-	rectH = customW/columns;
-	for(var r = 0; r < rows; r++)
-	{
-		for(var c = 0; c < columns; c++)
-		{
-			var b = boxes[r][c];
-			b.x = (c+1)*rectW;
-			b.y = r*rectH;
-		}
-	}
+	text("Overall Record: ", 601,130);
+	fill(0,255,0);
+	text(totalWins, 651, 130);
+	fill(0);
+	text("-",660, 130);
+	fill(255,0,0);
+	text(totalLosses,669,130);
+
+	text("Pro Record: ", 601,160);
+	fill(0,255,0);
+	text(proWins, 651, 160);
+	fill(0);
+	text("-",660, 160);
+	fill(255,0,0);
+	text(proLosses,669,160);
+
+	text("Con Record: ", 601,190);
+	fill(0,255,0);
+	text(conWins, 651, 190);
+	fill(0);
+	text("-",660, 190);
+	fill(255,0,0);
+	text(conLosses,669,190);
+
 }
