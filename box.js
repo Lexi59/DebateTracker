@@ -1,64 +1,74 @@
 let teamNum = 0;
-let size = 50;
+let height = 25;
+let width = 75;
+let roundNum = 2;
+let spacing = 30;
+let canvasHeight = 600;
+let canvasWidth = 600;
 
 function setup(){
-	createCanvas(600,600);
+	createCanvas(canvasWidth,canvasHeight);
 	background(255);
 	newTeamName = createInput().attribute('placeholder','Name');
-	newTeamName.position(601,0);
+	newTeamName.position(canvasWidth+1,0);
 	addTeamBtn = createButton("Add Team");
-	addTeamBtn.position(776,0);
+	addTeamBtn.position(canvasWidth + 175 + 1,0);
 	addTeamBtn.mousePressed(addTeam);
+	roundNumberInput = createInput().attribute('placeholder','Round number');
+	roundNumberInput.position(canvasWidth + 1,spacing);
 	team1 = createInput().attribute('placeholder','Up');
-	team1.position(601,30);
+	team1.position(canvasWidth + 1,spacing*2);
 	team2 = createInput().attribute('placeholder','Down');
-	team2.position(601,60);
+	team2.position(canvasWidth + 1,spacing*3);
 	side = createInput().attribute('placeholder','Which side were they on?');
-	side.position(776,30);
+	side.position(canvasWidth + 175 + 1,spacing*2);
+
 	var submit = createButton("Submit");
-	submit.position(601,90);
+	submit.position(canvasWidth + 1,spacing*4);
 	submit.mousePressed(submitRound);
 	showTable();
 }
 
 function showTable(){
+	clear();
 	stroke(0);
 	textAlign(CENTER, CENTER);
 	for(var i = 0; i <= teamNum; i++){
-		for(var j = 0; j <= teamNum; j++){
+		for(var j = 0; j <= roundNum; j++){
 			fill(getFill(i,j));
-			rect(i*size, j*size, size, size);
+			rect(j*width, i*height, width, height);
 		}
 	}
 	fill(0);
 	for(var i = 1; i <= teamNum; i++){
-		text(teams[i-1].name,size/2,i*size + size/2);
-		text(teams[i-1].name,i*size + size/2,size/2);
+		text(teams[i-1].name,width/2,i*height + height/2);
+	}
+	fill(0);
+	for(var i = 1; i <= roundNum; i++){
+		text("Round "+ i,i*width + width/2, height/2);
 	}
 	for(var i = 0; i < rounds.length; i++){
-		text(rounds[i].side, (rounds[i].loser.id+1)*size+ size/2, (rounds[i].winner.id+1) * size +size/2);
+		text(rounds[i].loser.name + " ↑ " + rounds[i].side, rounds[i].num*width+ width/2, (rounds[i].winner.id+1) * height +height/2);
 		if(rounds[i].side == "pro"){
-			text("con", (rounds[i].winner.id+1)*size+ size/2, (rounds[i].loser.id+1) * size +size/2);
+			text(rounds[i].winner.name + " ↓ con", rounds[i].num*width+ width/2, (rounds[i].loser.id+1) * height +height/2);
 		}
 		else{
-			text("pro", (rounds[i].winner.id+1)*size+ size/2, (rounds[i].loser.id+1) * size +size/2);
+			text(rounds[i].winner.name + " ↓ pro", rounds[i].num*width+ width/2, (rounds[i].loser.id+1) * height +height/2);
 		}
 	}
 }
 function getFill(i,j){
-	if(i == j){
-		return 0;
-	}
-	else if (i == 0 || j == 0){
+	if (i == 0 || j != 0){
 		return 255;
 	}
-	for(var k = 0; k < rounds.length; k++){
-		if(teams[i-1].name == rounds[k].winner.name && teams[j-1].name == rounds[k].loser.name){
-			return 'red';
-		}
-		else if (teams[i-1].name == rounds[k].loser.name && teams[j-1].name == rounds[k].winner.name){
-			return 'green';
-		}
+	if(teams[i-1].status == "up"){
+		return 'green';
+	}
+	else if (teams[i-1].status == "down"){
+		return 'red';
+	}
+	else if (teams[i-1].status == "out"){
+		return 'grey';
 	}
 	return 255;
 }
@@ -80,6 +90,10 @@ function addTeam(){
 }
 function submitRound(){
 	var winner, loser;
+	if(parseInt(roundNumberInput.value()) > roundNum){
+		roundNum++;
+		showTable();
+	}
 	for(var k = 0; k < teams.length; k++){
 		if(teams[k].name == team1.value()){
 			winner = teams[k];
@@ -96,7 +110,7 @@ function submitRound(){
 		console.log("Sorry! I can't figure out which side team " + team1.value() + " is supposed to be on");
 		return;
 	}
-	rounds.push(new Round(winner, loser, side.value().toLowerCase()));
+	rounds.push(new Round(winner, loser, side.value().toLowerCase(), parseInt(roundNumberInput.value())));
 	team1.value("");
 	team2.value("");
 	side.value("");
@@ -108,14 +122,11 @@ function mousePressed(){
 	{
 		for(var r = 0; r <= teamNum; r++)
 		{
-			if(mouseX <= c*size + size && mouseX >= c*size)
+			if(mouseX <= c*width + width && mouseX >= c*width)
 			{
-				if(mouseY <= r*size + size && mouseY >= r*size)
+				if(mouseY <= r*height + height && mouseY >= r*height)
 				{
-					if(r == 0 && c!= 0){
-						console.log("Opening team stats for team "+ teams[c-1].name);
-					}
-					else if (c == 0 && r != 0){
+					if (c == 0 && r != 0){
 						console.log("Opening team stats for team " + teams[r-1].name);
 					}
 					return;
