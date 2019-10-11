@@ -36,7 +36,13 @@ function showTable(){
 		text(teams[i-1].name,i*size + size/2,size/2);
 	}
 	for(var i = 0; i < rounds.length; i++){
-		text(rounds[i].side, rounds[i].loser.id*size/2 + size/2, rounds[i].winner.id * size/2 +size/2);
+		text(rounds[i].side, (rounds[i].loser.id+1)*size+ size/2, (rounds[i].winner.id+1) * size +size/2);
+		if(rounds[i].side == "pro"){
+			text("con", (rounds[i].winner.id+1)*size+ size/2, (rounds[i].loser.id+1) * size +size/2);
+		}
+		else{
+			text("pro", (rounds[i].winner.id+1)*size+ size/2, (rounds[i].loser.id+1) * size +size/2);
+		}
 	}
 }
 function getFill(i,j){
@@ -90,7 +96,7 @@ function submitRound(){
 		console.log("Sorry! I can't figure out which side team " + team1.value() + " is supposed to be on");
 		return;
 	}
-	rounds.push(new Round(winner, loser, side.value()));
+	rounds.push(new Round(winner, loser, side.value().toLowerCase()));
 	team1.value("");
 	team2.value("");
 	side.value("");
