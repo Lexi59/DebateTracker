@@ -2,7 +2,8 @@ let teams = new Array();
 let rounds = new Array();
 
 class Team{
-	constructor(name, id){
+	constructor(code, name, id){
+		this.code = code;
 		this.name = name;
 		this.id = id;
 		this.status = "up";
@@ -26,3 +27,4 @@ class Round{
 		}
 	}
 }
+
